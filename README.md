@@ -1,0 +1,1 @@
+# netlify-plugin-yield-ghost
