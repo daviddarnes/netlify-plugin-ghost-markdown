@@ -21,6 +21,8 @@ plugins:
       ghostKey: "YOURGHOSTKEY"
 ```
 
+_Test credentials can be "borrowed" from here: https://ghost.org/docs/api/v3/javascript/content/#working-example_
+
 ## Options
 ``` yaml
 # Where the images will go
