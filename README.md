@@ -17,7 +17,7 @@ Add the following to your `netlify.yaml` file:
 plugins:
   - package: "netlify-plugin-ghost-markdown"
     config:
-      ghostURL: "https://YUORGHOST.URL"
+      ghostURL: "https://YOURGHOST.URL"
       ghostKey: "YOURGHOSTKEY"
 ```
 
