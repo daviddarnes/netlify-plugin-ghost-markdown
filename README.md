@@ -72,3 +72,7 @@ Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.c
    ```
 
 1. Run `netlify build`
+
+# License
+
+Released under the [MIT license](LICENSE).
