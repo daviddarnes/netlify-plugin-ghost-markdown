@@ -42,7 +42,7 @@ _Psst, test credentials can be "borrowed" from here: https://ghost.org/docs/api/
       postsDir: "./_posts/"
 ```
 
-Currently posts follow the Jekyll markdown file name format. The option to pass template strings in as an option will come in the near future.
+Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.com/docs/posts/#creating-posts). The option to pass template strings in as an option will come in the near future.
 
 ## Development
 
