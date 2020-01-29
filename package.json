@@ -1,16 +1,33 @@
 {
   "name": "netlify-plugin-ghost-markdown",
   "version": "1.0.0",
-  "description": "",
+  "description": "Generates posts and pages from a Ghost publication as markdown files, using the Ghost Content API.",
+  "repository": "git://github.com/daviddarnes/netlify-plugin-ghost-markdown.git",
   "main": "index.js",
+  "maintainers": [
+    {
+      "name": "David Darnes",
+      "email": "me@daviddarnes.com"
+    }
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pretty": "prettier --check 'index.js'"
   },
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "keywords": [
+    "netlify",
+    "netlify-plugin",
+    "ghost",
+    "markdown"
+  ],
   "dependencies": {
     "@tryghost/content-api": "^1.3.7",
     "fs-extra": "^8.1.0",
     "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "@netlify/build": "^0.1.30",
+    "netlify-cli": "^2.21.0",
+    "prettier": "~1.19.0"
   }
 }
