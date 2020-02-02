@@ -11,7 +11,7 @@ Before you can use this package you'll need a Netlify project that can consume m
 1. Install the package as a dev dependency:
 
    ```
-   npm install --save-dev netlify-plugin-ghost-markdown
+   npm install --save netlify-plugin-ghost-markdown
    ```
 
 1. Add the following to your `netlify.yaml` file:
@@ -72,7 +72,7 @@ Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.c
 
 1. Create a new `netlify.yaml` file with the following:
 
-   ```
+   ```yaml
    plugins:
      - package: "_netlify-plugin-ghost-markdown"
        config:
