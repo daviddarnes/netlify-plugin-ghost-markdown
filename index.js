@@ -49,6 +49,7 @@ const mdTemplate = (item, url, imagePath, assetsDir) => {
   const assetsPath = assetsDir.replace("./", "/");
   return `
 ---
+date: ${item.published_at.slice(0, 10)}
 title: ${item.title}
 excerpt: "${item.custom_excerpt ? item.custom_excerpt : ""}"
 image: "${
@@ -77,7 +78,8 @@ module.exports = {
       ghostKey,
       assetsDir = "./assets/images/",
       pagesDir = "./",
-      postsDir = "./_posts/"
+      postsDir = "./_posts/",
+      postDatePrefix = true
     }
   }) => {
     // Ghost images path
@@ -110,9 +112,12 @@ module.exports = {
     // Generate markdown posts
     posts.forEach(post => {
       console.log("Creating post: " + post.title);
+      const filename = postDatePrefix
+        ? `${post.published_at.slice(0, 10)}-${post.slug}`
+        : post.slug;
       writeMarkdown(
         postsDir,
-        `${post.published_at.slice(0, 10)}-${post.slug}.md`,
+        `${filename}.md`,
         mdTemplate(post, ghostURL, ghostImagePath, assetsDir)
       );
     });
