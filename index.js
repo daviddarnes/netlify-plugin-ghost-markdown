@@ -71,7 +71,7 @@ const writeMarkdown = (fileDir, fileName, content) => {
 };
 
 module.exports = {
-  name: "ghost-markdown-generator",
+  name: "netlify-plugin-ghost-markdown",
   onPreBuild: async ({
     pluginConfig: {
       ghostURL,
