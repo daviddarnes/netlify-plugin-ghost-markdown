@@ -75,7 +75,7 @@ Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.c
    [[plugins]]
    package = "_netlify-plugin-ghost-markdown"
 
-     [plugins.config]
+     [plugins.inputs]
      ghostURL = "https://YOURGHOST.URL"
      ghostKey = "YOURGHOSTKEY"
      # Remember to get your Ghost API credentials
