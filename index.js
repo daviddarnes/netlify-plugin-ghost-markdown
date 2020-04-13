@@ -5,43 +5,44 @@ const url = require("url");
 const ghostContentAPI = require("@tryghost/content-api");
 
 // Get posts using Ghost Content API
-const getPosts = async api => {
-  const posts = await api.posts
-    .browse({
-      include: "tags,authors",
-      limit: "all"
-    })
-    .catch(error => {
-      console.error("Ghost posts error: " + error);
-    });
-
-  return posts;
+const getPosts = async (api, failPlugin) => {
+  try {
+    const posts = await api.posts
+      .browse({
+        include: "tags,authors",
+        limit: "all"
+      })
+    return posts;
+  } catch (error) {
+    failPlugin('Ghost posts error', { error })
+  }
 };
 
 // Get pages using Ghost Content API
-const getPages = async api => {
-  const pages = await api.pages
-    .browse({
-      include: "authors",
-      limit: "all"
-    })
-    .catch(err => {
-      console.error(err);
-    });
-
-  return pages;
+const getPages = async (api, failPlugin) => {
+  try {
+    const pages = await api.pages
+      .browse({
+        include: "authors",
+        limit: "all"
+      })
+    return pages;
+  } catch (error) {
+    failPlugin('Ghost pages error', { error })
+  }
 };
 
 // Get all images
-const downloadImage = async (inputURI, outputRoot) => {
-  // Grab file data from remote inputURI
-  const fileData = await fetch(inputURI)
-    .catch(err => {
-      console.log("Image file error: " + err);
-    })
-    .then(res => res.buffer());
-  // Write the file
-  await fs.outputFile(outputRoot, fileData);
+const downloadImage = async (inputURI, outputRoot, failPlugin) => {
+  try {
+    // Grab file data from remote inputURI
+    const res = await fetch(inputURI)
+    const fileData = await res.buffer()
+    // Write the file
+    await fs.outputFile(outputRoot, fileData);
+  } catch (error) {
+    failPlugin('Image file error', { error })
+  }
 };
 
 // Markdown template
@@ -64,23 +65,25 @@ ${item.html.replace(new RegExp(url + imagePath, "g"), assetsPath)}
 };
 
 // Write markdown file
-const writeMarkdown = (fileDir, fileName, content) => {
-  fs.outputFile(fileDir + fileName, content, error => {
-    error && console.log("Markdown file error: " + error);
-  });
+const writeMarkdown = async (fileDir, fileName, content, failPlugin) => {
+  try {
+    await fs.outputFile(fileDir + fileName, content)
+  } catch (error) {
+    failPlugin('Markdown file error', { error })
+  }
 };
 
 module.exports = {
-  name: "netlify-plugin-ghost-markdown",
   onPreBuild: async ({
-    pluginConfig: {
+    inputs: {
       ghostURL,
       ghostKey,
-      assetsDir = "./assets/images/",
-      pagesDir = "./",
-      postsDir = "./_posts/",
-      postDatePrefix = true
-    }
+      assetsDir,
+      pagesDir,
+      postsDir,
+      postDatePrefix
+    },
+    utils: { build: { failPlugin } }
   }) => {
     // Ghost images path
     const ghostImagePath = "/content/images/";
@@ -92,44 +95,43 @@ module.exports = {
       version: "v2"
     });
 
-    // Get pages and posts
-    let posts = await getPosts(api);
-    let pages = await getPages(api);
+    // Get pages, posts and images
+    const [posts, pages] = await Promise.all([getPosts(api, failPlugin), getPages(api, failPlugin)])
+    const images = [].concat(...([...posts, ...pages].map(item => [
+      ...item.html.split('"').filter(slice => slice.includes(ghostImagePath)),
+      ...(item.feature_image ? [item.feature_image] : [])
+    ])))
 
-    // Replace Ghost image paths with local ones
-    [...posts, ...pages].forEach(item => {
-      const images = [
-        ...item.html.split('"').filter(slice => slice.includes(ghostImagePath)),
-        ...(item.feature_image ? [item.feature_image] : [])
-      ].forEach(image => {
-        downloadImage(
-          image,
-          image.replace(ghostURL + ghostImagePath, assetsDir)
+    await Promise.all([
+      // Replace Ghost image paths with local ones
+      ...images.map(image => downloadImage(
+        image,
+        image.replace(ghostURL + ghostImagePath, assetsDir),
+        failPlugin
+      )),
+      // Generate markdown posts
+      ...posts.map(async post => {
+        console.log("Creating post: " + post.title);
+        const filename = postDatePrefix
+          ? `${post.published_at.slice(0, 10)}-${post.slug}`
+          : post.slug;
+        await writeMarkdown(
+          postsDir,
+          `${filename}.md`,
+          mdTemplate(post, ghostURL, ghostImagePath, assetsDir),
+          failPlugin
         );
-      });
-    });
-
-    // Generate markdown posts
-    posts.forEach(post => {
-      console.log("Creating post: " + post.title);
-      const filename = postDatePrefix
-        ? `${post.published_at.slice(0, 10)}-${post.slug}`
-        : post.slug;
-      writeMarkdown(
-        postsDir,
-        `${filename}.md`,
-        mdTemplate(post, ghostURL, ghostImagePath, assetsDir)
-      );
-    });
-
-    // Generate markdown pages
-    pages.forEach(page => {
-      console.log("Creating page: " + page.title);
-      writeMarkdown(
-        pagesDir,
-        `${pagesDir + page.slug}.md`,
-        mdTemplate(page, ghostURL, ghostImagePath, assetsDir)
-      );
-    });
+      }),
+      // Generate markdown pages
+      ...pages.map(async page => {
+        console.log("Creating page: " + page.title);
+        await writeMarkdown(
+          pagesDir,
+          `${pagesDir + page.slug}.md`,
+          mdTemplate(page, ghostURL, ghostImagePath, assetsDir),
+          failPlugin
+        );
+      })
+    ])
   }
 };
