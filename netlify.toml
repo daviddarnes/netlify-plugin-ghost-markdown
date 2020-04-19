@@ -1,17 +1,17 @@
 [build]
-  command = "npm install && cd test && bundle install && bundle exec jekyll build"
-  publish = "test/_site"
+  command = "cd demo && bundle install && bundle exec jekyll build"
+  publish = "demo/_site"
 
 [build.environment]
   JEKYLL_ENV = "production"
 
 [[plugins]]
-package = "./"
+package = "netlify-plugin-ghost-markdown"
 
    [plugins.inputs]
    ghostURL = "https://demo.ghost.io"
    ghostKey = "22444f78447824223cefc48062"
-   assetsDir = "./test/assets/images/"
-   pagesDir = "./test/"
-   postsDir = "./test/_posts/"
+   assetsDir = "./demo/assets/images/"
+   pagesDir = "./demo/"
+   postsDir = "./demo/_posts/"
 
