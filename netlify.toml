@@ -1,12 +1,12 @@
 [build]
-  command = "jekyll build"
-  publish = "_site"
+  command = "cd test && jekyll build"
+  publish = "test/_site"
 
 [build.environment]
   JEKYLL_ENV = "production"
 
 [[plugins]]
-package = "../index.js"
+package = "index.js"
 
    [plugins.inputs]
    ghostURL = "https://demo.ghost.io"
