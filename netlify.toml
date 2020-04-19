@@ -11,7 +11,7 @@ package = "index.js"
    [plugins.inputs]
    ghostURL = "https://demo.ghost.io"
    ghostKey = "22444f78447824223cefc48062"
-   assetsDir = "./test/assets/images/",
-   pagesDir = "./test/",
-   postsDir = "./test/_posts/",
+   assetsDir = "./test/assets/images/"
+   pagesDir = "./test/"
+   postsDir = "./test/_posts/"
 
