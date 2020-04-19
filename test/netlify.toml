@@ -1,0 +1,13 @@
+[build]
+  command = "jekyll build"
+  publish = "_site"
+
+[build.environment]
+  JEKYLL_ENV = "production"
+
+[[plugins]]
+package = "../index.js"
+
+   [plugins.inputs]
+   ghostURL = "https://demo.ghost.io"
+   ghostKey = "22444f78447824223cefc48062"
