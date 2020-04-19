@@ -1,2 +1,7 @@
 node_modules
 *.tgz
+test/_site/
+test/.sass-cache/
+test/.jekyll-metadata
+test/Gemfile.lock
+test/**/Gemfile.lock
