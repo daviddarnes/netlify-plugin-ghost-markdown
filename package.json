@@ -29,7 +29,7 @@
     "node-fetch": "^2.6.0"
   },
   "devDependencies": {
-    "@netlify/build": "^0.1.30",
+    "@netlify/build": "^0.1.117",
     "netlify-cli": "^2.21.0",
     "prettier": "~1.19.0"
   }
