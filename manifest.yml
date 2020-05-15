@@ -1,10 +1,10 @@
 name: netlify-plugin-ghost-markdown
 inputs:
   - name: ghostURL
-    description: API domain, must not end in a trailing slash
+    description: Your Ghost domain, must not end in a trailing slash
     required: true
   - name: ghostKey
-    description: Hex string copied from the Integrations screen in Ghost Admin
+    description: Content API key from the Integrations screen in Ghost Admin
     required: true
   - name: assetsDir
     description: Directory containing image assets (assets/images by default)
@@ -17,4 +17,4 @@ inputs:
   - name: postsLayout
     description: Layout value for posts (post by default)
   - name: postDatePrefix
-    description: Whether the published date should be prefixed to post titles
+    description: Date prefix on post file names (true by default)

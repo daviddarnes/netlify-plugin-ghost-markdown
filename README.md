@@ -18,7 +18,7 @@ package = "netlify-plugin-ghost-markdown"
    ghostURL = "https://YOURGHOST.URL"
    ghostKey = "YOURGHOSTKEY"
 ```
-   
+
 Note: The `[[plugins]]` line is required for each plugin, even if you have other plugins in your `netlify.toml` file already.
 
 You'll need to get a Ghost Content API URL and key to authenticate with your Ghost publication. Please see [the Ghost documentation](https://ghost.org/docs/api/v3/javascript/content/#authentication) for more info.
@@ -32,19 +32,28 @@ _Psst, test credentials can be "borrowed" from here: https://ghost.org/docs/api/
 package = "netlify-plugin-ghost-markdown"
 
   [plugins.inputs]
+  # Required: Your Ghost domain, must not end in a trailing slash
   ghostURL = "https://YOURGHOST.URL"
+
+  # Required: Content API key from the Integrations screen in Ghost Admin
   ghostKey = "YOURGHOSTKEY"
 
-  # Optionally set a directory for images
+  # Optional: Directory containing image assets (assets/images by default)
   assetsDir = "./assets/images/"
 
-  # Optionally set a directory for pages
+  # Optional: Directory containing pages (site root by default)
   pagesDir = "./"
 
-  # Optionally set a directory for posts
+  # Optional: Directory containing posts (_posts/ directory by default)
   postsDir = "./_posts/"
 
-  # Optionally remove the date prefix from post filenames
+  # Optional: Layout value for pages (page by default)
+  pageLayout = "page"
+
+  # Optional: Layout value for posts (post by default)
+  postsLayout = "post"
+
+  # Optional: Date prefix on post file names (true by default)
   postDatePrefix = true
 ```
 
@@ -52,36 +61,13 @@ Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.c
 
 ## Development
 
-1. Create a testing project using a static site generator like Jekyll:
-   ```
-   gem install bundler jekyll
-   jekyll new my-awesome-site
-   ```
-1. Move into that project, `cd my-awesome-site`
+_Testing inside the project is proving difficult at the minute. [Currently requesting support on a practical method here](https://community.netlify.com/t/creating-demos-for-build-plugins/12774/8)_
 
-1. Clone this repo into a `_plugins` directory using the following:
+1. Clone project down
 
-   ```
-   git clone git@github.com:daviddarnes/netlify-plugin-ghost-markdown.git _netlify-plugin-ghost-markdown
-   ```
+2. Install Netlify CLI with `npm install netlify-cli -g`
 
-1. Move into the plugin directory, `cd _plugins`
-
-1. Run `npm install`
-
-1. Create a new `netlify.toml` file with the following:
-
-   ```toml
-   [[plugins]]
-   package = "_netlify-plugin-ghost-markdown"
-
-     [plugins.inputs]
-     ghostURL = "https://YOURGHOST.URL"
-     ghostKey = "YOURGHOSTKEY"
-     # Remember to get your Ghost API credentials
-   ```
-
-1. Run `netlify build`
+3. Use `netlify build` and `netlify dev` to run the plugin locally
 
 # License
 
