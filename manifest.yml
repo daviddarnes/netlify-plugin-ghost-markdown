@@ -7,14 +7,14 @@ inputs:
     description: Hex string copied from the Integrations screen in Ghost Admin
     required: true
   - name: assetsDir
-    description: Directory containing image assets
-    default: ./assets/images/
+    description: Directory containing image assets (assets/images by default)
   - name: pagesDir
-    description: Directory containing pages
-    default: ./
+    description: Directory containing pages (site root by default)
   - name: postsDir
-    description: Directory containing posts
-    default: ./_posts/
+    description: Directory containing posts (_posts/ directory by default)
+  - name: pagesLayout
+    description: Layout value for pages (page by default)
+  - name: postsLayout
+    description: Layout value for posts (post by default)
   - name: postDatePrefix
     description: Whether the published date should be prefixed to post titles
-    defaut: true
