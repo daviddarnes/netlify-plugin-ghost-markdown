@@ -1,5 +1,7 @@
 # Netlify Ghost Markdown Build Plugin
 
+![npm version badge](https://img.shields.io/npm/v/netlify-plugin-ghost-markdown)
+
 This plugin generates posts and pages from a [Ghost](https://ghost.org) publication as markdown files, using the [Ghost Content API](https://ghost.org/docs/api/v3/content/). In addition it will copy images from the Ghost publication into a local assets directory. Pages, posts and images will be generated on the `onPreBuild` event in the Netlify deployment cycle, this is to ensure the files are present before an actual build occurs.
 
 ## Prerequisites
