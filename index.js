@@ -9,7 +9,7 @@ const getPosts = async (api, failPlugin) => {
   try {
     const posts = await api.posts.browse({
       include: "tags,authors",
-      limit: "all",
+      limit: "all"
     });
     return posts;
   } catch (error) {
@@ -22,7 +22,7 @@ const getPages = async (api, failPlugin) => {
   try {
     const pages = await api.pages.browse({
       include: "authors",
-      limit: "all",
+      limit: "all"
     });
     return pages;
   } catch (error) {
@@ -50,7 +50,7 @@ const mdTemplate = (item, url, imagePath, assetsDir, layout) => {
   return `
 ---
 date: ${item.published_at.slice(0, 10)}
-title: ${item.title}
+title: "${item.title}"
 layout: ${layout}
 excerpt: "${item.custom_excerpt ? item.custom_excerpt : ""}"
 image: "${
@@ -58,7 +58,7 @@ image: "${
       ? item.feature_image.replace(url + imagePath, assetsPath)
       : ""
   }"
-${item.tags ? `tags: [${item.tags.map((tag) => tag.name).join(", ")}]` : ""}
+tags: ${item.tags ? `[${item.tags.map((tag) => tag.name).join(", ")}]` : ""}
 ---
 ${
   item.html
@@ -88,11 +88,11 @@ module.exports = {
       postsDir = "./_posts/",
       pagesLayout = "page",
       postsLayout = "post",
-      postDatePrefix = true,
+      postDatePrefix = true
     },
     utils: {
-      build: { failPlugin },
-    },
+      build: { failPlugin }
+    }
   }) => {
     // Ghost images path
     const ghostImagePath = "/content/images/";
@@ -101,13 +101,13 @@ module.exports = {
     const api = new ghostContentAPI({
       url: ghostURL,
       key: ghostKey,
-      version: "v2",
+      version: "v2"
     });
 
     // Get pages, posts and images
     const [posts, pages] = await Promise.all([
       getPosts(api, failPlugin),
-      getPages(api, failPlugin),
+      getPages(api, failPlugin)
     ]);
     const images = [].concat(
       ...[...posts, ...pages]
@@ -118,7 +118,7 @@ module.exports = {
           }),
           ...(item.feature_image && item.feature_image.includes(ghostImagePath)
             ? [item.feature_image]
-            : []),
+            : [])
         ])
     );
 
@@ -155,7 +155,7 @@ module.exports = {
           mdTemplate(page, ghostURL, ghostImagePath, assetsDir, pagesLayout),
           failPlugin
         );
-      }),
+      })
     ]);
-  },
+  }
 };

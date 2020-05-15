@@ -14,7 +14,10 @@
     }
   ],
   "scripts": {
-    "pretty": "prettier --check 'index.js'"
+    "publish": "git push origin && git push origin --tags",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish"
   },
   "license": "MIT",
   "keywords": [
@@ -31,7 +34,6 @@
   },
   "devDependencies": {
     "@netlify/build": "^0.1.117",
-    "netlify-cli": "^2.21.0",
-    "prettier": "~1.19.0"
+    "netlify-cli": "^2.21.0"
   }
 }
