@@ -2,6 +2,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const fetch = require("node-fetch");
 const url = require("url");
+const chalk = require('chalk');
 const ghostContentAPI = require("@tryghost/content-api");
 
 // Get posts using Ghost Content API
@@ -30,41 +31,62 @@ const getPages = async (api, failPlugin) => {
   }
 };
 
-// Get all images
-const downloadImage = async (inputURI, outputRoot, failPlugin) => {
+// Download images
+const downloadImage = async (inputURI, outputPath, failPlugin) => {
   try {
+
     // Grab file data from remote inputURI
     const res = await fetch(inputURI);
     const fileData = await res.buffer();
 
-    // Write the file
-    await fs.outputFile(outputRoot, fileData);
+    // Write the file and cache it
+    await fs.outputFile(outputPath, fileData);
+
   } catch (error) {
     failPlugin("Image file error", { error });
   }
 };
 
 // Markdown template
-const mdTemplate = (item, url, imagePath, assetsDir, layout) => {
+const mdTemplate = (item, imagePath, assetsDir, layout) => {
+  // Remove dot for valid HTML
   const assetsPath = assetsDir.replace("./", "/");
+
+  // Format fearture image path
+  const formatFeatureImage = (path) => {
+    if (path) {
+      return path.replace(imagePath, assetsPath);
+    }
+    return "";
+  };
+
+  // Format tags into array string
+  const formatTags = (tags) => {
+    if (tags) {
+      return `[${item.tags.map((tag) => tag.name).join(", ")}]`;
+    }
+    return "";
+  };
+
+  // Format HTML with updated image parths
+  const formatHtml = (html) => {
+    if (html) {
+      return item.html.replace(new RegExp(imagePath, "g"), assetsPath);
+    }
+    return "";
+  };
+
+  // Return markdown template with frontmatter
   return `
 ---
 date: ${item.published_at.slice(0, 10)}
 title: "${item.title}"
 layout: ${layout}
 excerpt: "${item.custom_excerpt ? item.custom_excerpt : ""}"
-image: "${
-    item.feature_image
-      ? item.feature_image.replace(url + imagePath, assetsPath)
-      : ""
-  }"
-tags: ${item.tags ? `[${item.tags.map((tag) => tag.name).join(", ")}]` : ""}
+image: "${formatFeatureImage(item.feature_image)}"
+tags: ${formatTags(item.tags)}
 ---
-${
-  item.html
-    ? item.html.replace(new RegExp(url + imagePath, "g"), assetsPath)
-    : ""
-}
+${formatHtml(item.html)}
 `.trim();
 };
 
@@ -91,11 +113,13 @@ module.exports = {
       postDatePrefix = true
     },
     utils: {
-      build: { failPlugin }
+      build: { failPlugin },
+      cache
     }
   }) => {
+
     // Ghost images path
-    const ghostImagePath = "/content/images/";
+    const ghostImagePath = ghostURL + "/content/images/";
 
     // Initialise Ghost Content API
     const api = new ghostContentAPI({
@@ -109,52 +133,92 @@ module.exports = {
       getPosts(api, failPlugin),
       getPages(api, failPlugin)
     ]);
-    const images = [].concat(
-      ...[...posts, ...pages]
-        .filter((item) => item.html)
-        .map((item) => [
-          ...item.html.split('"').filter((slice) => {
-            slice.includes(ghostImagePath);
-          }),
-          ...(item.feature_image && item.feature_image.includes(ghostImagePath)
-            ? [item.feature_image]
-            : [])
-        ])
-    );
 
-    await Promise.all([
-      // Replace Ghost image paths with local ones
-      ...images.map((image) =>
-        downloadImage(
-          image,
-          image.replace(ghostURL + ghostImagePath, assetsDir),
-          failPlugin
+    // Find all images
+    const findImages = (allContent) => {
+
+      // Find all posts and pages with images in the HTML
+      const htmlWithImages = allContent
+        .filter((item) => item.html && item.html.includes(ghostImagePath))
+        .map((item) => item.html);
+
+      // Get all images from posts and pages
+      const htmlImages = htmlWithImages
+        .map((html) =>
+          html.split('"').filter((slice) => {
+            return slice.includes(ghostImagePath);
+          })
         )
-      ),
+        .flat();
+
+      // Get all feature images from posts and pages
+      const featureImages = allContent
+        .filter(
+          (item) =>
+            item.feature_image && item.feature_image.includes(ghostImagePath)
+        )
+        .map((item) => item.feature_image);
+
+      // Clear up and possible duplicates
+      const allImages = [...new Set([...htmlImages, ...featureImages])];
+
+      return allImages;
+    };
+
+    // Generate all images, posts and pages…
+    await Promise.all([
+
+      // Replace Ghost image paths with local ones
+      ...findImages([...posts, ...pages]).map( async (image) => {
+
+        // Image destination
+        const dest = image.replace(ghostImagePath, assetsDir);
+
+        // Check if image is in Netlify cache
+        if (await cache.has(dest)) {
+
+          // Restore image from cache
+          await cache.restore(dest);
+          console.log(chalk.green('Restored from cache: ') + chalk.green.underline(dest));
+
+        } else {
+
+          // …otherwise download the image and cache it
+          await downloadImage(image, dest, failPlugin);
+          await cache.save(dest);
+          console.log(chalk.cyan('Downloading and caching: ') + chalk.cyan.underline(dest));
+        }
+      }),
 
       // Generate markdown posts
       ...posts.map(async (post) => {
-        console.log("Creating post: " + post.title);
+
+        // Prefix filename with date, Jekyll style formatting
         const filename = postDatePrefix
           ? `${post.published_at.slice(0, 10)}-${post.slug}`
           : post.slug;
+
+        // Create post markdown file with content
         await writeMarkdown(
           postsDir,
           `${filename}.md`,
-          mdTemplate(post, ghostURL, ghostImagePath, assetsDir, postsLayout),
+          mdTemplate(post, ghostImagePath, assetsDir, postsLayout),
           failPlugin
         );
+        console.log(chalk.gray('Generated post: ') + chalk.gray.underline(post.title));
       }),
 
       // Generate markdown pages
       ...pages.map(async (page) => {
-        console.log("Creating page: " + page.title);
+
+        // Create page markdown file with content
         await writeMarkdown(
           pagesDir,
           `${pagesDir + page.slug}.md`,
           mdTemplate(page, ghostURL, ghostImagePath, assetsDir, pagesLayout),
           failPlugin
         );
+        console.log(chalk.gray('Generated page: ') + chalk.gray.underline(page.title));
       })
     ]);
   }
