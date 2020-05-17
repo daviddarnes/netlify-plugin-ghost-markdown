@@ -6,4 +6,3 @@ Gemfile.lock
 **/*.md
 *.md
 assets/
-plugins/
