@@ -6,7 +6,7 @@
   JEKYLL_ENV = "production"
 
 [[plugins]]
-  package = "../index.js"
+  package = "./test/plugins/index.js"
 
   [plugins.inputs]
     ghostURL = "https://demo.ghost.io"

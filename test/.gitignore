@@ -3,3 +3,7 @@ _site/
 .jekyll-metadata
 Gemfile.lock
 **/Gemfile.lock
+**/*.md
+*.md
+assets/
+plugins/

@@ -47,15 +47,28 @@ const downloadImage = async (inputURI, outputPath, failPlugin) => {
   }
 };
 
+// Relative image paths
+const getRelativePath = (assetsDir, docDir) => {
+  const explodedAssetsDir = assetsDir.split("/");
+  const explodedDocDir = docDir.split("/");
+
+  console.log(explodedAssetsDir);
+  console.log(explodedDocDir);
+
+  explodedAssetsDir.map((slice, index) => {
+    console.log("asset slice " + slice)
+    console.log("doc slice   " + explodedDocDir[index]);
+    console.log("matches     " + slice == explodedDocDir[index]);
+  });
+};
+
 // Markdown template
 const mdTemplate = (item, imagePath, assetsDir, layout) => {
-  // Remove dot for valid HTML
-  const assetsPath = assetsDir.replace("./", "/");
 
   // Format fearture image path
   const formatFeatureImage = (path) => {
     if (path) {
-      return path.replace(imagePath, assetsPath);
+      return path.replace(imagePath, assetsDir);
     }
     return "";
   };
@@ -71,7 +84,7 @@ const mdTemplate = (item, imagePath, assetsDir, layout) => {
   // Format HTML with updated image parths
   const formatHtml = (html) => {
     if (html) {
-      return item.html.replace(new RegExp(imagePath, "g"), assetsPath);
+      return html.replace(new RegExp(imagePath, "g"), assetsDir);
     }
     return "";
   };
@@ -198,6 +211,8 @@ module.exports = {
           ? `${post.published_at.slice(0, 10)}-${post.slug}`
           : post.slug;
 
+        console.log("index " + getRelativePath(assetsDir, postsDir));
+
         // Create post markdown file with content
         await writeMarkdown(
           postsDir,
@@ -214,8 +229,8 @@ module.exports = {
         // Create page markdown file with content
         await writeMarkdown(
           pagesDir,
-          `${pagesDir + page.slug}.md`,
-          mdTemplate(page, ghostURL, ghostImagePath, assetsDir, pagesLayout),
+          `${page.slug}.md`,
+          mdTemplate(page, ghostImagePath, assetsDir, pagesLayout),
           failPlugin
         );
         console.log(chalk.gray('Generated page: ') + chalk.gray.underline(page.title));

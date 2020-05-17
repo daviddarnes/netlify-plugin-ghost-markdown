@@ -14,6 +14,9 @@
     }
   ],
   "scripts": {
+    "clonePlugin": "copyfiles index.js package.json manifest.yml test/plugins",
+    "test": "npm run clonePlugin && netlify build",
+    "dev": "npm run test && netlify dev",
     "publish": "git push origin && git push origin --tags",
     "release:patch": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
@@ -28,12 +31,13 @@
   ],
   "dependencies": {
     "@tryghost/content-api": "^1.4.1",
+    "chalk": "^4.0.0",
     "fs-extra": "^8.1.0",
-    "node-fetch": "^2.6.0",
-    "chalk": "^4.0.0"
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
     "@netlify/build": "^0.1.117",
-    "netlify-cli": "^2.21.0"
+    "netlify-cli": "^2.51.0",
+    "copyfiles": "^2.2.0"
   }
 }
