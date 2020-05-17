@@ -67,9 +67,9 @@ _Testing inside the project is proving difficult at the minute. [Currently reque
 
 1. Clone project down
 
-2. Install Netlify CLI with `npm install netlify-cli -g`
+2. Install dependencies with `npm install`
 
-3. Use `netlify build` and `netlify dev` to run the plugin locally
+3. Run `npm run dev` to clone the plugin into `test/` Jekyll project
 
 # License
 
