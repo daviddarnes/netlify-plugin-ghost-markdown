@@ -14,3 +14,4 @@
     assetsDir = "./test/assets/images/"
     pagesDir = "./test/"
     postsDir = "./test/_posts/"
+    cacheFile = "./test/_data/ghostMarkdownCache.json"

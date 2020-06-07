@@ -57,6 +57,9 @@ package = "netlify-plugin-ghost-markdown"
 
   # Optional: Date prefix on post file names (true by default)
   postDatePrefix = true
+
+  # Optional: File path and name for a timestamp caching file (_data/ghostMarkdownCache.json by default)
+  cacheFile = "./_data/ghostMarkdownCache.json"
 ```
 
 Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.com/docs/posts/#creating-posts). Set the `postDatePrefix` to false to use the post slug as the file name
