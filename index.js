@@ -5,105 +5,189 @@ const url = require("url");
 const chalk = require("chalk");
 const ghostContentAPI = require("@tryghost/content-api");
 
-// Get posts using Ghost Content API
-const getPosts = async (api, failPlugin) => {
+const getContent = async ({ contentType, failPlugin }) => {
+  // getContent({
+  // contentType = api.posts || api.pages
+  // failPlugin = failPlugin
+  // });
+
   try {
-    const posts = await api.posts.browse({
+    // Retrieve the content using the set API endpoint
+    const content = await contentType.browse({
       include: "tags,authors",
       limit: "all"
     });
-    return posts;
-  } catch (error) {
-    failPlugin("Ghost posts error", { error });
+
+    // Return content
+    return content;
+  } catch {
+    failPlugin("Ghost API content error", { error });
   }
 };
 
-// Get pages using Ghost Content API
-const getPages = async (api, failPlugin) => {
-  try {
-    const pages = await api.pages.browse({
-      include: "authors",
-      limit: "all"
-    });
-    return pages;
-  } catch (error) {
-    failPlugin("Ghost pages error", { error });
-  }
-};
+const downloadImage = async ({ imagePath, outputPath, failPlugin }) => {
+  // downloadImage({
+  // imagePath = string, image path
+  // outputPath = string, desired relative image path
+  // failPlugin = failPlugin
+  // });
 
-// Download images
-const downloadImage = async (inputURI, outputPath, failPlugin) => {
   try {
-    // Grab file data from remote inputURI
-    const res = await fetch(inputURI);
-    const fileData = await res.buffer();
+    // Grab file data from remote path
+    const response = await fetch(imagePath);
+    const fileData = await response.buffer();
 
     // Write the file and cache it
     await fs.outputFile(outputPath, fileData);
   } catch (error) {
-    failPlugin("Image file error", { error });
+    failPlugin("Image download error", { error });
   }
 };
 
-// Relative image paths
-const getRelativePath = (assetsDir, docDir) => {
-  const explodedAssetsDir = assetsDir.split("/");
-  const explodedDocDir = docDir.split("/");
+const getRelativeImagePath = ({ imagePath, contentPath }) => {
+  // getRelativeImagePath({
+  // imagePath = string, the path of the image
+  // contentPath = string, the path of the post or page
+  // });
 
-  const difference = explodedAssetsDir.findIndex((slice, index) => {
-    return explodedDocDir[index] != slice;
+  // Split both paths into arrays, at their directory points
+  const explodedImagePath = imagePath.split("/");
+  const explodedContentPath = contentPath.split("/");
+
+  // Find the point at which the image path diverges from the content path
+  const difference = explodedImagePath.findIndex((slice, index) => {
+    return explodedContentPath[index] != slice;
   });
 
-  return "/" + explodedAssetsDir.slice(difference).join("/");
+  // Reconstruct the image path from the point it diverges to it's end
+  const relativePath = `/${explodedImagePath.slice(difference).join("/")}`;
+
+  // Return the new image path
+  return relativePath;
 };
 
-// Markdown template
-const mdTemplate = (item, imagePath, assetsDir, layout) => {
-  // Format fearture image path
-  const formatFeatureImage = (path) => {
-    if (path) {
-      return path.replace(imagePath, assetsDir);
-    }
-    return "";
+const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
+  // createMarkdownContent({
+  // content = object, the content item
+  // imagesPath = string, the base path for Ghost images
+  // assetsPath = string, the new path for images
+  // layout = string, the layout name
+  // });
+
+  // Replace Ghost image paths with the new image paths
+  const formatImagePaths = string => {
+    return string.replace(new RegExp(imagesPath, "g"), assetsDir);
   };
 
-  // Format tags into array string
-  const formatTags = (tags) => {
+  // Format tags into a comma separated string
+  const formatTags = tags => {
     if (tags) {
-      return `[${item.tags.map((tag) => tag.name).join(", ")}]`;
+      return `[${tags.map(tag => tag.name).join(", ")}]`;
     }
     return "";
   };
 
-  // Format HTML with updated image parths
-  const formatHtml = (html) => {
-    if (html) {
-      return html.replace(new RegExp(imagePath, "g"), assetsDir);
-    }
-    return "";
+  // Remove indentation
+  const dedent = string => {
+    string = string.replace(/^\n/, "");
+    let match = string.match(/^\s+/);
+    return match
+      ? string.replace(new RegExp("^" + match[0], "gm"), "")
+      : string;
   };
 
-  // Return markdown template with frontmatter
-  return `
----
-date: ${item.published_at.slice(0, 10)}
-title: "${item.title}"
-layout: ${layout}
-excerpt: "${item.custom_excerpt ? item.custom_excerpt : ""}"
-image: "${formatFeatureImage(item.feature_image)}"
-tags: ${formatTags(item.tags)}
----
-${formatHtml(item.html)}
-`.trim();
+  // Create the markdown template
+  const template = `
+    ---
+    date: ${content.published_at.slice(0, 10)}
+    title: "${content.title}"
+    layout: ${layout}
+    excerpt: "${content.custom_excerpt ? content.custom_excerpt : ""}"
+    image: "${
+      content.feature_image ? formatImagePaths(content.feature_image) : ""
+    }"
+    tags: ${formatTags(content.tags)}
+    ---
+    ${formatImagePaths(content.html)}
+  `;
+
+  // Return the template without the indentation
+  return dedent(template);
 };
 
-// Write markdown file
-const writeMarkdown = async (fileDir, fileName, content, failPlugin) => {
+const writeFile = async ({ fullFilePath, content, failPlugin }) => {
+  // writeFile({
+  // fullFilePath = string, the full file path and name with extension
+  // failPlugin = failPlugin
+  //});
+
   try {
-    await fs.outputFile(fileDir + fileName, content);
+    // Output file using path and name with it's content within
+    await fs.outputFile(fullFilePath, content);
   } catch (error) {
-    failPlugin("Markdown file error", { error });
+    failPlugin(`Error writing ${fullFilePath}`, { error });
   }
+};
+
+const writeCacheTimestamp = async ({ fullFilePath, failPlugin }) => {
+  // writeCacheTimestamp({
+  // fullFilePath = string, the local file path and name
+  // failPlugin = failPlugin
+  // });
+
+  // Get the timestamp of right now
+  const now = new Date();
+  const nowISO = now.toISOString();
+
+  // Write the time into a cache file
+  await writeFile({
+    fullFilePath: fullFilePath,
+    content: `"${nowISO}"`,
+    failPlugin: failPlugin
+  });
+};
+
+const readFile = async ({ file, failPlugin }) => {
+  // readFile({
+  // file = string, the local file path and name
+  // failPlugin = failPlugin
+  // });
+
+  // Replace root path syntax with environment
+  const fullFilePath = file.replace("./", `${process.cwd()}/`);
+  const fileContent = require(fullFilePath);
+
+  // Return file content
+  return fileContent;
+};
+
+const getAllImages = ({ contentItems, imagesPath }) => {
+  // getAllImages({
+  // contentItems = array, post and page objects
+  // imagesPath = string, the base path for Ghost images
+  // });
+
+  const htmlWithImages = contentItems
+    .filter(item => {
+      return item.html && item.html.includes(imagesPath);
+    })
+    .map(filteredItem => filteredItem.html);
+
+  const htmlImages = htmlWithImages
+    .map(html => {
+      return html.split('"').filter(slice => slice.includes(imagesPath));
+    })
+    .flat();
+
+  const featureImages = contentItems
+    .filter(item => {
+      return item.feature_image && item.feature_image.includes(imagesPath);
+    })
+    .map(item => item.feature_image);
+
+  const allImages = [...new Set([...htmlImages, ...featureImages])];
+
+  return allImages;
 };
 
 // Begin plugin export
@@ -117,7 +201,8 @@ module.exports = {
       postsDir = "./_posts/",
       pagesLayout = "page",
       postsLayout = "post",
-      postDatePrefix = true
+      postDatePrefix = true,
+      cacheFile = "./_data/ghostMarkdownCache.json"
     },
     utils: {
       build: { failPlugin },
@@ -134,104 +219,145 @@ module.exports = {
       version: "v2"
     });
 
-    // Get pages, posts and images
     const [posts, pages] = await Promise.all([
-      getPosts(api, failPlugin),
-      getPages(api, failPlugin)
+      getContent({
+        contentType: api.posts,
+        failPlugin: failPlugin
+      }),
+      getContent({
+        contentType: api.pages,
+        failPlugin: failPlugin
+      })
     ]);
 
-    // Find all images
-    const findImages = (allContent) => {
-      // Find all posts and pages with images in the HTML
-      const htmlWithImages = allContent
-        .filter((item) => item.html && item.html.includes(ghostImagePath))
-        .map((item) => item.html);
+    // Get cache timestamp if it's there
+    let cacheTime = 0;
+    if (await cache.has(cacheFile)) {
+      await cache.restore(cacheFile);
+      cacheTime = Date.parse(
+        await readFile({ file: cacheFile, failPlugin: failPlugin })
+      );
+    }
 
-      // Get all images from posts and pages
-      const htmlImages = htmlWithImages
-        .map((html) =>
-          html.split('"').filter((slice) => {
-            return slice.includes(ghostImagePath);
-          })
-        )
-        .flat();
+    // Write new cache file and cache it
 
-      // Get all feature images from posts and pages
-      const featureImages = allContent
-        .filter(
-          (item) =>
-            item.feature_image && item.feature_image.includes(ghostImagePath)
-        )
-        .map((item) => item.feature_image);
-
-      // Clear up and possible duplicates
-      const allImages = [...new Set([...htmlImages, ...featureImages])];
-
-      return allImages;
-    };
-
-    // Generate all images, posts and pages…
     await Promise.all([
-      // Replace Ghost image paths with local ones
-      ...findImages([...posts, ...pages]).map(async (image) => {
-        // Image destination
+      // Get all images from out of posts and pages
+      ...getAllImages({
+        contentItems: [...posts, ...pages],
+        imagesPath: ghostImagePath
+      }).map(async image => {
+        // Create destination for each image
         const dest = image.replace(ghostImagePath, assetsDir);
 
-        // Check if image is in Netlify cache
-        if (await cache.has(dest)) {
-          // Restore image from cache
-          await cache.restore(dest);
+        // If the image isn't in cache download it
+        if (!(await cache.has(dest))) {
+          await downloadImage({
+            imagePath: image,
+            outputPath: dest,
+            failPlugin: failPlugin
+          });
+
+          // Cache the image
+          await cache.save(dest);
+
           console.log(
-            chalk.green("Restored from cache: ") + chalk.green.underline(dest)
+            chalk.cyan("Downloaded and cached: ") + chalk.cyan.underline(dest)
           );
         } else {
-          // …otherwise download the image and cache it
-          await downloadImage(image, dest, failPlugin);
-          await cache.save(dest);
+          // Restore the image if it's already in the cache
+          await cache.restore(dest);
           console.log(
-            chalk.cyan("Downloading and caching: ") + chalk.cyan.underline(dest)
+            chalk.cyan("Restored from cache: ") + chalk.cyan.underline(dest)
           );
         }
       }),
+      ...posts.map(async post => {
+        // Set the file name using the post slug
+        let fileName = `${post.slug}.md`;
 
-      // Generate markdown posts
-      ...posts.map(async (post) => {
-        // Prefix filename with date, Jekyll style formatting
-        const filename = postDatePrefix
-          ? `${post.published_at.slice(0, 10)}-${post.slug}`
-          : post.slug;
+        // If postDatePrefix is true prefix file with post date
+        if (postDatePrefix) {
+          fileName = `${post.published_at.slice(0, 10)}-${post.slug}.md`;
+        }
 
-        // Remove initial matching paths for relative source path
-        const relativeAssetsDir = getRelativePath(assetsDir, postsDir);
+        // The full file path and name
+        const fullFilePath = postsDir + fileName;
 
-        // Create post markdown file with content
-        await writeMarkdown(
-          postsDir,
-          `${filename}.md`,
-          mdTemplate(post, ghostImagePath, relativeAssetsDir, postsLayout),
-          failPlugin
-        );
-        console.log(
-          chalk.gray("Generated post: ") + chalk.gray.underline(post.title)
-        );
+        // Get the post updated date as a Date object
+        const postUpdatedAt = Date.parse(post.updated_at);
+
+        if ((await cache.has(fullFilePath)) && cacheTime > postUpdatedAt) {
+          // Restore markdown from cache
+          await cache.restore(fullFilePath);
+          console.log(
+            chalk.cyan("Restored from cache: ") +
+              chalk.cyan.underline(fullFilePath)
+          );
+        } else {
+          // Generate markdown file
+          await writeFile({
+            fullFilePath: fullFilePath,
+            content: createMarkdownContent({
+              content: post,
+              imagesPath: ghostImagePath,
+              assetsDir: getRelativeImagePath({
+                imagePath: assetsDir,
+                contentPath: postsDir
+              }),
+              layout: postsLayout
+            })
+          });
+          // Cache the markdown file
+          await cache.save(postsDir + fileName);
+          console.log(
+            chalk.green("Generated and cached: ") +
+              chalk.green.underline(postsDir + fileName)
+          );
+        }
       }),
+      ...pages.map(async page => {
+        // Set the file name using the page slug
+        let fileName = `${page.slug}.md`;
 
-      // Generate markdown pages
-      ...pages.map(async (page) => {
-        // Remove initial matching paths for relative source path
-        const relativeAssetsDir = getRelativePath(assetsDir, pagesDir);
+        // The full file path and name
+        const fullFilePath = pagesDir + fileName;
 
-        // Create page markdown file with content
-        await writeMarkdown(
-          pagesDir,
-          `${page.slug}.md`,
-          mdTemplate(page, ghostImagePath, relativeAssetsDir, pagesLayout),
-          failPlugin
-        );
-        console.log(
-          chalk.gray("Generated page: ") + chalk.gray.underline(page.title)
-        );
-      })
+        // Get the page updated date as a Date object
+        const pageUpdatedAt = Date.parse(page.updated_at);
+
+        if ((await cache.has(fullFilePath)) && cacheTime > pageUpdatedAt) {
+          // Restore markdown from cache
+          await cache.restore(fullFilePath);
+          console.log(
+            chalk.cyan("Restored from cache: ") +
+              chalk.cyan.underline(fullFilePath)
+          );
+        } else {
+          // Generate markdown file
+          await writeFile({
+            fullFilePath: fullFilePath,
+            content: createMarkdownContent({
+              content: page,
+              imagesPath: ghostImagePath,
+              assetsDir: getRelativeImagePath({
+                imagePath: assetsDir,
+                contentPath: pagesDir
+              }),
+              layout: pagesLayout
+            })
+          });
+          // Cache the markdown file
+          await cache.save(fullFilePath);
+          console.log(
+            chalk.green("Generated and cached: ") +
+              chalk.green.underline(fullFilePath)
+          );
+        }
+      }),
+      // Write a new cache file before finishing up
+      writeCacheTimestamp({ fullFilePath: cacheFile, failPlugin: failPlugin }),
+      cache.save(cacheFile)
     ]);
   }
 };

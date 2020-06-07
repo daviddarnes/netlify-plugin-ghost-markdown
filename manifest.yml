@@ -18,3 +18,5 @@ inputs:
     description: Layout value for posts (post by default)
   - name: postDatePrefix
     description: Date prefix on post file names (true by default)
+  - name: cacheFile
+    description: Set the filename and path for the cache file (_data/ghostMarkdownCache.json by default)
