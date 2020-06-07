@@ -1,6 +1,6 @@
 {
   "name": "netlify-plugin-ghost-markdown",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Generates posts and pages from a Ghost publication as markdown files, using the Ghost Content API.",
   "repository": "git://github.com/daviddarnes/netlify-plugin-ghost-markdown.git",
   "bugs": {
