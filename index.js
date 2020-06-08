@@ -175,7 +175,10 @@ const getAllImages = ({ contentItems, imagesPath }) => {
 
   const htmlImages = htmlWithImages
     .map(html => {
-      return html.split('"').filter(slice => slice.includes(imagesPath));
+      const splitStrings = html.split('"');
+      return splitStrings
+        .split(" ")
+        .filter(slice => slice.includes(imagesPath));
     })
     .flat();
 
