@@ -2,8 +2,17 @@ const fs = require("fs-extra");
 const path = require("path");
 const fetch = require("node-fetch");
 const url = require("url");
-const chalk = require("chalk");
+const { cyan, green, yellow } = require("chalk");
 const ghostContentAPI = require("@tryghost/content-api");
+
+const log = ({ color, label, value = false }) => {
+  // log({
+  // color = chalk color
+  // label = string, text label
+  // value = var, value being read out
+  // });
+  console.log(`${color(label)}${value ? color(`: ${color.bold(value)}`) : ""}`);
+};
 
 const getContent = async ({ contentType, failPlugin }) => {
   // getContent({
@@ -129,8 +138,40 @@ const writeFile = async ({ fullFilePath, content, failPlugin }) => {
   }
 };
 
-const writeCacheTimestamp = async ({ fullFilePath, failPlugin }) => {
+const getCacheTimestamp = async ({ cache, fullFilePath, failPlugin }) => {
+  // getCacheTimestamp({
+  // cache = cache
+  // fullFilePath = string, the local file path and name
+  // failPlugin: failPlugin
+  // });
+
+  if (await cache.has(fullFilePath)) {
+    await cache.restore(fullFilePath);
+    const cacheDate = await readFile({
+      file: fullFilePath,
+      failPlugin: failPlugin
+    });
+
+    // Log cache timestamp in console
+    log({
+      color: yellow,
+      label: "Restoring markdown cache from",
+      value: cacheDate
+    });
+    return new Date(cacheDate);
+  } else {
+    // Log no cache file found
+    log({
+      color: yellow,
+      label: "No cache file found"
+    });
+    return 0;
+  }
+};
+
+const writeCacheTimestamp = async ({ cache, fullFilePath, failPlugin }) => {
   // writeCacheTimestamp({
+  // cache = cache
   // fullFilePath = string, the local file path and name
   // failPlugin = failPlugin
   // });
@@ -144,6 +185,15 @@ const writeCacheTimestamp = async ({ fullFilePath, failPlugin }) => {
     fullFilePath: fullFilePath,
     content: `"${nowISO}"`,
     failPlugin: failPlugin
+  });
+
+  await cache.save(fullFilePath);
+
+  // Log cache timestamp creation time
+  log({
+    color: yellow,
+    label: "Caching markdown at",
+    value: nowISO
   });
 };
 
@@ -175,10 +225,7 @@ const getAllImages = ({ contentItems, imagesPath }) => {
 
   const htmlImages = htmlWithImages
     .map(html => {
-      const splitStrings = html.split('"');
-      return splitStrings
-        .split(" ")
-        .filter(slice => slice.includes(imagesPath));
+      return html.split(/[\ "]/).filter(slice => slice.includes(imagesPath));
     })
     .flat();
 
@@ -222,7 +269,7 @@ module.exports = {
       version: "v2"
     });
 
-    const [posts, pages] = await Promise.all([
+    const [posts, pages, cacheDate] = await Promise.all([
       getContent({
         contentType: api.posts,
         failPlugin: failPlugin
@@ -230,19 +277,13 @@ module.exports = {
       getContent({
         contentType: api.pages,
         failPlugin: failPlugin
+      }),
+      getCacheTimestamp({
+        cache: cache,
+        fullFilePath: cacheFile,
+        failPlugin: failPlugin
       })
     ]);
-
-    // Get cache timestamp if it's there
-    let cacheTime = 0;
-    if (await cache.has(cacheFile)) {
-      await cache.restore(cacheFile);
-      cacheTime = Date.parse(
-        await readFile({ file: cacheFile, failPlugin: failPlugin })
-      );
-    }
-
-    // Write new cache file and cache it
 
     await Promise.all([
       // Get all images from out of posts and pages
@@ -264,15 +305,20 @@ module.exports = {
           // Cache the image
           await cache.save(dest);
 
-          console.log(
-            chalk.cyan("Downloaded and cached: ") + chalk.cyan.underline(dest)
-          );
+          log({
+            color: green,
+            label: "Downloaded and cached",
+            value: dest
+          });
         } else {
           // Restore the image if it's already in the cache
           await cache.restore(dest);
-          console.log(
-            chalk.cyan("Restored from cache: ") + chalk.cyan.underline(dest)
-          );
+
+          log({
+            color: cyan,
+            label: "Restored from cache",
+            value: dest
+          });
         }
       }),
       ...posts.map(async post => {
@@ -287,16 +333,18 @@ module.exports = {
         // The full file path and name
         const fullFilePath = postsDir + fileName;
 
-        // Get the post updated date as a Date object
-        const postUpdatedAt = Date.parse(post.updated_at);
+        // Get the post updated date and last cached date
+        const postUpdatedAt = new Date(post.updated_at);
 
-        if ((await cache.has(fullFilePath)) && cacheTime > postUpdatedAt) {
+        if ((await cache.has(fullFilePath)) && cacheDate > postUpdatedAt) {
           // Restore markdown from cache
           await cache.restore(fullFilePath);
-          console.log(
-            chalk.cyan("Restored from cache: ") +
-              chalk.cyan.underline(fullFilePath)
-          );
+
+          log({
+            color: cyan,
+            label: "Restored from cache",
+            value: fullFilePath
+          });
         } else {
           // Generate markdown file
           await writeFile({
@@ -312,11 +360,13 @@ module.exports = {
             })
           });
           // Cache the markdown file
-          await cache.save(postsDir + fileName);
-          console.log(
-            chalk.green("Generated and cached: ") +
-              chalk.green.underline(postsDir + fileName)
-          );
+          await cache.save(fullFilePath);
+
+          log({
+            color: green,
+            label: "Generated and cached",
+            value: fullFilePath
+          });
         }
       }),
       ...pages.map(async page => {
@@ -326,16 +376,18 @@ module.exports = {
         // The full file path and name
         const fullFilePath = pagesDir + fileName;
 
-        // Get the page updated date as a Date object
-        const pageUpdatedAt = Date.parse(page.updated_at);
+        // Get the page updated date and last cached date
+        const pageUpdatedAt = new Date(page.updated_at);
 
-        if ((await cache.has(fullFilePath)) && cacheTime > pageUpdatedAt) {
+        if ((await cache.has(fullFilePath)) && cacheDate > pageUpdatedAt) {
           // Restore markdown from cache
           await cache.restore(fullFilePath);
-          console.log(
-            chalk.cyan("Restored from cache: ") +
-              chalk.cyan.underline(fullFilePath)
-          );
+
+          log({
+            color: cyan,
+            label: "Restored from cache",
+            value: fullFilePath
+          });
         } else {
           // Generate markdown file
           await writeFile({
@@ -352,15 +404,21 @@ module.exports = {
           });
           // Cache the markdown file
           await cache.save(fullFilePath);
-          console.log(
-            chalk.green("Generated and cached: ") +
-              chalk.green.underline(fullFilePath)
-          );
+
+          log({
+            color: green,
+            label: "Generated and cached",
+            value: fullFilePath
+          });
         }
-      }),
-      // Write a new cache file before finishing up
-      writeCacheTimestamp({ fullFilePath: cacheFile, failPlugin: failPlugin }),
-      cache.save(cacheFile)
-    ]);
+      })
+    ]).then(async response => {
+      // Write a new cache file
+      await writeCacheTimestamp({
+        cache: cache,
+        fullFilePath: cacheFile,
+        failPlugin: failPlugin
+      });
+    });
   }
 };
