@@ -29,7 +29,7 @@ const getContent = async ({ contentType, failPlugin }) => {
 
     // Return content
     return content;
-  } catch {
+  } catch (error) {
     failPlugin("Ghost API content error", { error });
   }
 };
