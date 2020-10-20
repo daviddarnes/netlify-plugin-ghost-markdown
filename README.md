@@ -68,7 +68,7 @@ Currently posts follow the [Jekyll markdown file name format](https://jekyllrb.c
 
 _Testing inside the project is proving difficult at the minute. [Currently requesting support on a practical method here](https://community.netlify.com/t/creating-demos-for-build-plugins/12774/8)_
 
-_Currently you need clone this project and copy the plugin into an example site, and then run it like a [custom build plugin](https://docs.netlify.com/configure-builds/build-plugins/create-plugins/). You can [download the demo site here](https://github.com/daviddarnes/netlify-plugin-dropinblog-markdown-demo) if you need it as a quick starting point. Don't forget to install the dependencies and [run it using Netlify CLI](https://docs.netlify.com/cli/get-started/#run-builds-locally)!_
+_Currently you need clone this project and copy the plugin into an example site, copy the `package.json` into the root of the project, and then run it like a [custom build plugin](https://docs.netlify.com/configure-builds/build-plugins/create-plugins/). You can [download the demo site here](https://github.com/daviddarnes/netlify-plugin-dropinblog-markdown-demo) if you need it as a quick starting point. Don't forget to install the dependencies and [run it using Netlify CLI](https://docs.netlify.com/cli/get-started/#run-builds-locally)!_
 
 # License
 
