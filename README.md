@@ -72,7 +72,7 @@ _Testing inside the project is proving difficult at the minute. [Currently reque
 
 2. Install dependencies with `npm install`
 
-3. Run `npm run dev` to clone the plugin into `test/` Jekyll project
+3. Run `npm run test` to clone the plugin into `test/` Jekyll project
 
 # License
 
