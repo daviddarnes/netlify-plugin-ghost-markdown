@@ -127,6 +127,7 @@ const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
 const writeFile = async ({ fullFilePath, content, failPlugin }) => {
   // writeFile({
   // fullFilePath = string, the full file path and name with extension
+  // content = contents of the file
   // failPlugin = failPlugin
   //});
 
