@@ -75,6 +75,32 @@ const getRelativeImagePath = ({ imagePath, contentPath }) => {
   return relativePath;
 };
 
+const dedent = ({ string }) => {
+  // dedent({
+  // string = string, the template content
+  // });
+
+  // Take any string and remove indentation
+  string = string.replace(/^\n/, "");
+  const match = string.match(/^\s+/);
+  const dedentedString = match
+    ? string.replace(new RegExp("^" + match[0], "gm"), "")
+    : string;
+
+  return dedentedString;
+};
+
+const formatImagePaths = ({ string, imagesPath, assetsDir }) => {
+  // formatImagePaths({
+  // string = string, the template content
+  // imagesPath = string, original Ghost image path
+  // assetsDir = string, the new path for the image
+  // });
+
+  // Take a string and replace the Ghost image path with the new images path
+  return string.replace(new RegExp(imagesPath, "g"), assetsDir);
+};
+
 const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
   // createMarkdownContent({
   // content = object, the content item
@@ -83,26 +109,12 @@ const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
   // layout = string, the layout name
   // });
 
-  // Replace Ghost image paths with the new image paths
-  const formatImagePaths = string => {
-    return string.replace(new RegExp(imagesPath, "g"), assetsDir);
-  };
-
   // Format tags into a comma separated string
-  const formatTags = tags => {
+  const formatTags = (tags) => {
     if (tags) {
-      return `[${tags.map(tag => tag.name).join(", ")}]`;
+      return `[${tags.map((tag) => tag.name).join(", ")}]`;
     }
     return "";
-  };
-
-  // Remove indentation
-  const dedent = string => {
-    string = string.replace(/^\n/, "");
-    let match = string.match(/^\s+/);
-    return match
-      ? string.replace(new RegExp("^" + match[0], "gm"), "")
-      : string;
   };
 
   // Create the markdown template
@@ -113,15 +125,127 @@ const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
     layout: ${layout}
     excerpt: "${content.custom_excerpt ? content.custom_excerpt : ""}"
     image: "${
-      content.feature_image ? formatImagePaths(content.feature_image) : ""
+      content.feature_image
+        ? formatImagePaths({
+            string: content.feature_image,
+            imagesPath,
+            assetsDir
+          })
+        : ""
     }"
     tags: ${formatTags(content.tags)}
     ---
-    ${formatImagePaths(content.html)}
+    ${
+      content.html
+        ? formatImagePaths({
+            string: content.feature_image,
+            imagesPath,
+            assetsDir
+          })
+        : ""
+    }
   `;
 
   // Return the template without the indentation
-  return dedent(template);
+  return dedent({ string: template });
+};
+
+const createTagMarkdown = ({ content, imagesPath, assetsDir, layout }) => {
+  // createTagMarkdown({
+  // content = onject, the full content of the item
+  // imagesPath = string, the base path for Ghost images
+  // assetsPath = string, the new path for images
+  // layout = string, the layout name
+  //});
+
+  // Create the frontmatter template
+  const template = `
+    ---
+    title: "${content.name ? content.name : content.slug}"
+    layout: ${layout}
+    excerpt: "${content.description ? content.description : ""}"
+    image: "${
+      content.feature_image
+        ? formatImagePaths({
+            string: content.feature_image,
+            imagesPath,
+            assetsDir
+          })
+        : ""
+    }"
+    ---
+    ${content.html}
+  `;
+
+  // Return the template without the indentation
+  return dedent({ string: template });
+};
+
+const createAuthorMarkdown = ({ content, imagesPath, assetsDir, layout }) => {
+  // createAuthorMarkdown({
+  // content = onject, the full content of the item
+  // imagesPath = string, the base path for Ghost images
+  // assetsPath = string, the new path for images
+  // layout = string, the layout name
+  //});
+
+  // Create the frontmatter template
+  const template = `
+    ---
+    title: "${content.name ? content.name : content.slug}"
+    layout: ${layout}
+    excerpt: "${content.bio ? content.bio : ""}"
+    image: "${
+      content.cover_image
+        ? formatImagePaths({
+            string: content.cover_image,
+            imagesPath,
+            assetsDir
+          })
+        : ""
+    }"
+    ---
+    ${content.html}
+  `;
+
+  // Return the template without the indentation
+  return dedent({ string: template });
+};
+
+const createTaxonomyContent = ({ taxonomyItem, items, postDatePrefix }) => {
+  const descriptionLine = taxonomyItem.description
+    ? `<p>${taxonomyItem.description}</p>`
+    : "";
+
+  const itemsList = items.length
+    ? `
+    <ol>
+      ${items
+        .map((item) => {
+          console.log({ postDatePrefix });
+
+          // Format post links to match date prefixing, if set
+          const link =
+            postDatePrefix && !item.page
+              ? `${item.published_at.slice(0, 10).replace(/-/g, "/")}/${
+                  item.slug
+                }`
+              : item.slug;
+          ``;
+
+          return `
+          <li>
+            <a href="/${link}/">${item.title}</a>
+            ${item.excerpt ? `<p>${item.excerpt}</p>` : ""}
+          </li>
+        `;
+        })
+        .join("")}
+    </ol>
+  `
+    : "";
+
+  return dedent({ string: descriptionLine + itemsList });
 };
 
 const writeFile = async ({ fullFilePath, content, failPlugin }) => {
@@ -214,29 +338,37 @@ const readFile = async ({ file, failPlugin }) => {
 
 const getAllImages = ({ contentItems, imagesPath }) => {
   // getAllImages({
-  // contentItems = array, post and page objects
+  // contentItems = array, post, page, tag, author objects
   // imagesPath = string, the base path for Ghost images
   // });
 
   const htmlWithImages = contentItems
-    .filter(item => {
+    .filter((item) => {
       return item.html && item.html.includes(imagesPath);
     })
-    .map(filteredItem => filteredItem.html);
+    .map((filteredItem) => filteredItem.html);
 
   const htmlImages = htmlWithImages
-    .map(html => {
-      return html.split(/[\ "]/).filter(slice => slice.includes(imagesPath));
+    .map((html) => {
+      return html.split(/[\ "]/).filter((slice) => slice.includes(imagesPath));
     })
     .flat();
 
   const featureImages = contentItems
-    .filter(item => {
+    .filter((item) => {
       return item.feature_image && item.feature_image.includes(imagesPath);
     })
-    .map(item => item.feature_image);
+    .map((item) => item.feature_image);
 
-  const allImages = [...new Set([...htmlImages, ...featureImages])];
+  const coverImages = contentItems
+    .filter((item) => {
+      return item.cover_image && item.cover_image.includes(imagesPath);
+    })
+    .map((item) => item.cover_image);
+
+  const allImages = [
+    ...new Set([...htmlImages, ...featureImages, ...coverImages])
+  ];
 
   return allImages;
 };
@@ -250,8 +382,14 @@ module.exports = {
       assetsDir = "./assets/images/",
       pagesDir = "./",
       postsDir = "./_posts/",
+      tagPages = false,
+      authorPages = false,
+      tagsDir = "./tag/",
+      authorsDir = "./author/",
       pagesLayout = "page",
       postsLayout = "post",
+      tagsLayout = "tag",
+      authorsLayout = "author",
       postDatePrefix = true,
       cacheFile = "./_data/ghostMarkdownCache.json"
     },
@@ -270,7 +408,7 @@ module.exports = {
       version: "v2"
     });
 
-    const [posts, pages, cacheDate] = await Promise.all([
+    const [posts, pages, cacheDate, tags, authors] = await Promise.all([
       getContent({
         contentType: api.posts,
         failPlugin: failPlugin
@@ -283,15 +421,32 @@ module.exports = {
         cache: cache,
         fullFilePath: cacheFile,
         failPlugin: failPlugin
-      })
+      }),
+      tagPages
+        ? getContent({
+            contentType: api.tags,
+            failPlugin: failPlugin
+          })
+        : [],
+      authorPages
+        ? getContent({
+            contentType: api.authors,
+            failPlugin: failPlugin
+          })
+        : []
     ]);
 
     await Promise.all([
       // Get all images from out of posts and pages
       ...getAllImages({
-        contentItems: [...posts, ...pages],
+        contentItems: [
+          ...posts,
+          ...pages,
+          ...(tagPages ? tags : []),
+          ...(authorPages ? authors : [])
+        ],
         imagesPath: ghostImagePath
-      }).map(async image => {
+      }).map(async (image) => {
         // Create destination for each image
         const dest = image.replace(ghostImagePath, assetsDir);
 
@@ -322,7 +477,7 @@ module.exports = {
           });
         }
       }),
-      ...posts.map(async post => {
+      ...posts.map(async (post) => {
         // Set the file name using the post slug
         let fileName = `${post.slug}.md`;
 
@@ -370,7 +525,7 @@ module.exports = {
           });
         }
       }),
-      ...pages.map(async page => {
+      ...pages.map(async (page) => {
         // Set the file name using the page slug
         let fileName = `${page.slug}.md`;
 
@@ -412,8 +567,80 @@ module.exports = {
             value: fullFilePath
           });
         }
-      })
-    ]).then(async response => {
+      }),
+      ...(tagPages
+        ? tags.map(async (tag) => {
+            // Filter posts and pages to only tagged items
+            const taggedItems = [...pages, ...posts].filter((items) => {
+              return items.tags.some((postTag) => postTag.slug === tag.slug);
+            });
+
+            // Add content to the author page
+            tag.html = createTaxonomyContent({
+              taxonomyItem: tag,
+              items: taggedItems,
+              postDatePrefix
+            });
+
+            // Set the file name using the page slug
+            let fileName = `${tag.slug}.md`;
+
+            // The full file path and name
+            const fullFilePath = tagsDir + fileName;
+
+            // Generate markdown file
+            await writeFile({
+              fullFilePath: fullFilePath,
+              content: createTagMarkdown({
+                content: tag,
+                imagesPath: ghostImagePath,
+                assetsDir: getRelativeImagePath({
+                  imagePath: assetsDir,
+                  contentPath: tagsDir
+                }),
+                layout: tagsLayout
+              })
+            });
+          })
+        : []),
+      ...(authorPages
+        ? authors.map(async (author) => {
+            // Filter posts and pages to only tagged items
+            const authoredItems = [...pages, ...posts].filter((items) => {
+              return items.authors.some(
+                (postAuthor) => postAuthor.slug === author.slug
+              );
+            });
+
+            // Add content to the author page
+            author.html = createTaxonomyContent({
+              taxonomyItem: author,
+              items: authoredItems,
+              postDatePrefix
+            });
+
+            // Set the file name using the page slug
+            let fileName = `${author.slug}.md`;
+
+            // The full file path and name
+            const fullFilePath = authorsDir + fileName;
+
+            // Generate markdown file
+            await writeFile({
+              fullFilePath: fullFilePath,
+              content: createAuthorMarkdown({
+                content: author,
+                imagesPath: ghostImagePath,
+                assetsDir: getRelativeImagePath({
+                  imagePath: assetsDir,
+                  contentPath: authorsDir
+                }),
+                layout: authorsLayout
+              })
+            });
+          })
+        : [])
+    ]).then(async (response) => {
       // Write a new cache file
       await writeCacheTimestamp({
         cache: cache,
