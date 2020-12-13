@@ -222,8 +222,6 @@ const createTaxonomyContent = ({ taxonomyItem, items, postDatePrefix }) => {
     <ol>
       ${items
         .map((item) => {
-          console.log({ postDatePrefix });
-
           // Format post links to match date prefixing, if set
           const link =
             postDatePrefix && !item.page
