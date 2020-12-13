@@ -12,10 +12,22 @@ inputs:
     description: Directory containing pages (site root by default)
   - name: postsDir
     description: Directory containing posts (_posts/ directory by default)
+  - name: tagPages
+    description: Optionally output tag pages (turned off by default)
+  - name: authorPages
+    description: Optionally output author pages (turned off by default)
+  - name: tagsDir
+    description: Directory containing tags (tag/ directory by default)
+  - name: authorsDir
+    description: Directory containing authors (author/ directory by default)
   - name: pagesLayout
     description: Layout value for pages (page by default)
   - name: postsLayout
     description: Layout value for posts (post by default)
+  - name: tagsLayout
+    description: Layout value for tags (tag by default)
+  - name: authorsLayout
+    description: Layout value for authors (author by default)
   - name: postDatePrefix
     description: Date prefix on post file names (true by default)
   - name: cacheFile

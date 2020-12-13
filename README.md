@@ -51,11 +51,29 @@ package = "netlify-plugin-ghost-markdown"
   # Optional: Directory containing posts (_posts/ directory by default)
   postsDir = "./_posts/"
 
+  # Optional: Output tag pages (false by default)
+  tagPages = false
+
+  # Optional: Output author pages (false by default)
+  authorPages = false
+
+  # Optional: Directory containing tags (tag/ directory by default)
+  tagsDir = "tag/"
+
+  # Optional: Directory containing authors (author/ directory by default)
+  authorsDir = "author/"
+
   # Optional: Layout value for pages (page by default)
   pageLayout = "page"
 
   # Optional: Layout value for posts (post by default)
   postsLayout = "post"
+
+  # Optional: Layout value for pages (page by default)
+  tagsLayout = "tag"
+
+  # Optional: Layout value for posts (post by default)
+  authorsLayout = "author"
 
   # Optional: Date prefix on post file names (true by default)
   postDatePrefix = true
