@@ -98,7 +98,7 @@ const formatImagePaths = ({ string, imagesPath, assetsDir }) => {
   // });
 
   // Take a string and replace the Ghost image path with the new images path
-  return string.replace(new RegExp(imagesPath, "g"), assetsDir);
+  return string?.replace(new RegExp(imagesPath, "g"), assetsDir);
 };
 
 const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
