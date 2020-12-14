@@ -97,8 +97,13 @@ const formatImagePaths = ({ string, imagesPath, assetsDir }) => {
   // assetsDir = string, the new path for the image
   // });
 
-  // Take a string and replace the Ghost image path with the new images path
-  return string?.replace(new RegExp(imagesPath, "g"), assetsDir);
+  const imagePathRegex = new RegExp(imagesPath, "g");
+
+  if (string && string.match(imagePathRegex)) {
+    // Take a string and replace the Ghost image path with the new images path
+    return string.replace(imagePathRegex, assetsDir);
+  }
+  return string;
 };
 
 const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
@@ -138,7 +143,7 @@ const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
     ${
       content.html
         ? formatImagePaths({
-            string: content.feature_image,
+            string: content.html,
             imagesPath,
             assetsDir
           })
