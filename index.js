@@ -117,7 +117,7 @@ const createMarkdownContent = ({ content, imagesPath, assetsDir, layout }) => {
   // Format tags into a comma separated string
   const formatTags = (tags) => {
     if (tags) {
-      return `[${tags.map((tag) => tag.name).join(", ")}]`;
+      return `[${tags.map((tag) => tag.slug).join(", ")}]`;
     }
     return "";
   };
