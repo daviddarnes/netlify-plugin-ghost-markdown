@@ -33,8 +33,8 @@
     "node-fetch": "^2.6.0"
   },
   "devDependencies": {
-    "@netlify/build": "^0.1.117",
+    "@netlify/build": "^27.15.6",
     "copyfiles": "^2.2.0",
-    "netlify-cli": "^2.51.0"
+    "netlify-cli": "^11.5.0"
   }
 }
